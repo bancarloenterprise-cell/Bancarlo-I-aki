@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OmniLocal - Todos los Giros, Locales Reales y Reseñas Reales</title>
+    <title>OmniLocal - Encuentra Locales Reales para Cualquier Producto del Mundo</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -149,7 +149,7 @@
 <div class="container">
     <header>
         <h1>OmniLocal</h1>
-        <div class="subtitle">Todos los Giros del Mundo • Locales Reales • Reseñas Reales del Negocio y del Producto</div>
+        <div class="subtitle">Cualquier Producto o Giro del Mundo • Locales Reales donde SÍ lo Venden • Reseñas Reales</div>
     </header>
 
     <div class="gps-bar">
@@ -166,19 +166,19 @@
     </div>
 
     <div class="search-box">
-        <input type="text" id="queryInput" placeholder="Busca literalmente lo que sea: iPhone, BBB, Tiendas 3B, regaderas, bancos, notaría, cine, taller..." onkeyup="if(event.key==='Enter') buscarTodo(false)">
+        <input type="text" id="queryInput" placeholder="Busca cualquier producto que exista: nueces, termos, iPhone, BBB, regaderas, pilas, paraguas..." onkeyup="if(event.key==='Enter') buscarTodo(false)">
         <button onclick="buscarTodo(false)">Buscar</button>
     </div>
 
     <div class="quick-tags">
+        <button class="chip" onclick="buscarRapido('Nueces')">🥜 Nueces</button>
+        <button class="chip" onclick="buscarRapido('Termos')">🥤 Termos</button>
         <button class="chip" onclick="buscarRapido('iPhone')">📱 iPhone</button>
-        <button class="chip" onclick="buscarRapido('Tiendas 3B')">🛒 Tiendas 3B (BBB)</button>
+        <button class="chip" onclick="buscarRapido('BBB')">🛒 Tiendas 3B (BBB)</button>
         <button class="chip" onclick="buscarRapido('regaderas')">🚿 Regaderas</button>
         <button class="chip" onclick="buscarRapido('bancos')">🏦 Bancos</button>
         <button class="chip" onclick="buscarRapido('paletas')">🍦 Paletas</button>
-        <button class="chip" onclick="buscarRapido('camisas')">👔 Camisas</button>
         <button class="chip" onclick="buscarRapido('farmacia')">💊 Farmacia</button>
-        <button class="chip" onclick="buscarRapido('taller')">🔧 Taller</button>
     </div>
 
     <div class="map-wrapper">
@@ -193,7 +193,7 @@
 
     <div id="routeBanner" class="route-banner"></div>
 
-    <div id="loader" class="loader">🛰️ Escaneando todos los giros y locales reales desde tu ubicación... (<span id="timerSec">0</span>s)</div>
+    <div id="loader" class="loader">🛰️ Buscando en todos los comercios reales donde venden "<span id="loadingQuery"></span>"... (<span id="timerSec">0</span>s)</div>
     <div id="results"></div>
 </div>
 
@@ -420,12 +420,62 @@
         return (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     }
 
-    // Enciclopedia Mundial Completa: Todos los Giros Comerciales, Industriales, Públicos y de Servicios
+    // Enciclopedia Universal: Mapea CUALQUIER Producto, Artículo, Alimento o Servicio -> Comercios Reales donde SÍ se vende
     const CATALOGO_UNIVERSAL = [
-        // 1. IPHONE, CELULARES, APPLE Y TELEFONÍA
+        // 1. NUECES, SEMILLAS, FRUTOS SECOS, GRANEL, CEREALES Y NATURISTAS
+        {
+            palabras: [
+                "nuez", "nueces", "almendra", "almendras", "pistache", "pistaches", "cacahuate", "cacahuates",
+                "arandano", "arandanos", "pasa", "pasas", "ciruela pasa", "datil", "datiles", "semilla", "semillas",
+                "girasol", "calabaza", "chia", "linaza", "ajonjoli", "avena", "granola", "cereal", "cereales",
+                "frutos secos", "especias", "condimentos", "canela", "pimienta", "clavo", "comino", "chile seco",
+                "jamaica", "tamarindo", "miel", "naturista", "tienda naturista", "granel", "harina", "azucar", "sal"
+            ],
+            osm: [
+                "nuts", "health_food", "spices", "organic", "supermarket", "convenience", "greengrocer", "marketplace",
+                "semillas", "cereales", "frutos secos", "naturista", "granel", "especias", "mercado", "fruteria",
+                "abarrotes", "walmart", "soriana", "chedraui", "la comer", "fresko", "city market", "heb", "aurrera",
+                "costco", "sams", "3b", "tiendas 3b", "oxxo", "asturiano", "garibaldi", "gnc"
+            ],
+            shopOSM: "nuts|health_food|spices|organic|supermarket|convenience|greengrocer|deli|farm",
+            amenityOSM: "marketplace",
+            photon: ["semillas y cereales", "tienda naturista", "supermercado", "mercado", "fruteria", "abarrotes"],
+            geo: "commercial.supermarket,commercial.health_and_beauty.pharmacy,commercial.food_and_drink.fruit_and_vegetable,commercial.marketplace,commercial.convenience",
+            validas: [
+                "nut", "nuez", "semilla", "cereal", "health_food", "naturist", "spice", "especia", "organic",
+                "supermarket", "convenience", "greengrocer", "marketplace", "mercado", "fruter", "abarrote",
+                "walmart", "soriana", "chedraui", "comer", "fresko", "aurrera", "costco", "sams", "3b", "oxxo", "asturiano"
+            ],
+            excluir: /hotel|motel|car_repair|bank|atm|hospital|lawyer|notary/i,
+            precioMin: 45, precioMax: 280, unidadPrecio: "Por bolsa / cuarto / kilo"
+        },
+        // 2. TERMOS, BOTELLAS, VASOS, TUPPER, COCINA Y ARTÍCULOS PARA EL HOGAR
+        {
+            palabras: [
+                "termo", "termos", "yeti", "stanley", "hydro flask", "botella", "botellas", "cilindro", "cantimplora",
+                "vaso", "vasos", "taza", "tazas", "tupper", "recipiente", "lonchera", "sarten", "sartenes", "olla", "ollas",
+                "cacerola", "comal", "plato", "platos", "cubiertos", "cuchillo", "licuadora", "cafetera", "tostador",
+                "plancha", "ventilador", "cocina", "hogar", "articulos para el hogar", "plastico", "plasticos", "tupperware"
+            ],
+            osm: [
+                "houseware", "kitchenware", "department_store", "supermarket", "variety_store", "gift", "coffee",
+                "termo", "termos", "hogar", "cocina", "plasticos", "walmart", "soriana", "chedraui", "la comer",
+                "liverpool", "sears", "coppel", "sanborns", "costco", "sams", "suburbia", "starbucks", "miniso", "waldos", "prichos"
+            ],
+            shopOSM: "houseware|kitchenware|department_store|supermarket|variety_store|gift|appliance|general",
+            photon: ["articulos para el hogar", "tienda departamental", "supermercado", "walmart", "liverpool", "miniso", "starbucks"],
+            geo: "commercial.houseware_and_hardware,commercial.department_store,commercial.supermarket,commercial.gift_and_souvenir",
+            validas: [
+                "houseware", "kitchen", "department_store", "supermarket", "variety", "gift", "hogar", "cocina",
+                "termo", "walmart", "soriana", "chedraui", "comer", "liverpool", "sears", "coppel", "sanborns",
+                "costco", "sams", "suburbia", "starbucks", "miniso", "waldos", "prichos", "elektra"
+            ],
+            excluir: /hotel|motel|car_repair|bank|atm|hospital|lawyer|notary/i,
+            precioMin: 120, precioMax: 950, unidadPrecio: "Por pieza"
+        },
+        // 3. IPHONE, CELULARES, APPLE Y TELEFONÍA
         {
             palabras: ["iphone", "iphones", "apple", "macbook", "ipad", "airpods", "celular", "celulares", "smartphone", "telefono", "samsung", "galaxy", "xiaomi", "motorola", "telcel", "at&t", "att", "movistar", "ishop", "macstore", "dimovil", "empretec"],
-            esMarcaExacta: false,
             osm: ["mobile_phone", "electronics", "iphone", "apple", "ishop", "macstore", "telcel", "at&t", "att", "movistar", "samsung", "xiaomi", "dimovil", "empretec", "celulares", "telefonia", "movil", "walmart", "liverpool", "sears", "coppel", "sanborns", "costco", "sams", "elektra"],
             shopOSM: "mobile_phone|electronics|telecommunication",
             photon: ["tienda de celulares", "telcel", "ishop mixup", "macstore", "tienda de electronica", "walmart", "liverpool", "coppel"],
@@ -434,7 +484,7 @@
             excluir: /office depot|home depot|papeleria|stationery|ferreteria|hardware|hotel|motel|restaurant|pizza|taco|pharmacy|hospital|bakery/i,
             precioMin: 8999, precioMax: 34999, unidadPrecio: "Equipo nuevo / reacondicionado"
         },
-        // 2. TIENDAS 3B / BBB
+        // 4. TIENDAS 3B / BBB
         {
             palabras: ["bbb", "3b", "tiendas 3b", "tienda 3b", "tres b"],
             esMarcaExacta: true,
@@ -444,7 +494,7 @@
             excluir: /hotel|motel|hospital|pharmacy/i,
             precioMin: 25, precioMax: 350, unidadPrecio: "Despensa económica"
         },
-        // 3. PLOMERÍA, BAÑOS, REGADERAS, FERRETERÍA Y CONSTRUCCIÓN
+        // 5. PLOMERÍA, BAÑOS, REGADERAS, FERRETERÍA Y CONSTRUCCIÓN
         {
             palabras: ["regadera", "regaderas", "monomando", "mezcladora", "grifo", "grifos", "llave de agua", "lavabo", "wc", "inodoro", "calentador", "boiler", "tinaco", "bomba de agua", "tubo", "tubos", "pvc", "plomeria", "plomero", "ferreteria", "ferreterias", "tlapaleria", "herramienta", "herramientas", "taladro", "martillo", "desarmador", "pinzas", "tornillo", "tornillos", "cemento", "pintura", "foco", "focos", "materiales de construccion"],
             osm: ["hardware", "doityourself", "bathroom_furnishing", "trade", "building_materials", "paint", "electrical", "ferreteria", "tlapaleria", "plomeria", "banos", "home depot", "sodimac", "truper", "helvex", "urrea", "interceramic", "llano de la torre", "comex", "berel", "construrama"],
@@ -456,7 +506,7 @@
             excluir: /hotel|motel|restaurant|pizza|taco|bank|atm|pharmacy|hospital/i,
             precioMin: 180, precioMax: 1650, unidadPrecio: "Por pieza / juego"
         },
-        // 4. CERRAJERÍA, CARPINTERÍA, HERRERÍA, VIDRIERÍA E IMPRENTA
+        // 6. CERRAJERÍA, CARPINTERÍA, HERRERÍA, VIDRIERÍA E IMPRENTA
         {
             palabras: ["llave", "llaves", "cerrajeria", "cerrajero", "chapa", "candado", "carpinteria", "herreria", "vidrieria", "imprenta", "lonas", "serigrafia", "fabrica", "bodega", "taller industrial"],
             osm: ["locksmith", "carpenter", "metal_construction", "glaziery", "printer", "cerrajeria", "carpinteria", "herreria", "vidrieria", "imprenta"],
@@ -468,7 +518,7 @@
             validas: ["locksmith", "cerrajer", "carpenter", "carpinter", "herrer", "vidrier", "imprenta", "printer", "works"],
             precioMin: 80, precioMax: 1400, unidadPrecio: "Servicio / trabajo"
         },
-        // 5. MUEBLES, COLCHONES, ELECTRODOMÉSTICOS Y HOGAR
+        // 7. MUEBLES, COLCHONES, ELECTRODOMÉSTICOS Y HOGAR
         {
             palabras: ["mueble", "muebles", "muebleria", "sofa", "sala", "comedor", "cama", "colchon", "colchones", "ropero", "closet", "escritorio", "silla", "mesa", "refrigerador", "lavadora", "estufa", "microondas", "electrodomesticos", "linea blanca"],
             osm: ["furniture", "bed", "interior_decoration", "appliance", "muebleria", "muebles", "colchones", "dico", "ikea", "dormimundo", "luuna", "liverpool", "coppel", "elektra"],
@@ -478,7 +528,7 @@
             validas: ["furniture", "bed", "muebler", "mueble", "colchon", "appliance", "electrodomest", "dico", "dormimundo", "liverpool", "coppel", "elektra"],
             precioMin: 950, precioMax: 6500, unidadPrecio: "Por artículo"
         },
-        // 6. BANCOS, CAJEROS Y FINANZAS
+        // 8. BANCOS, CAJEROS Y FINANZAS
         {
             palabras: ["banco", "bancos", "cajero", "cajeros", "cajero automatico", "atm", "bbva", "banamex", "citibanamex", "santander", "banorte", "hsbc", "scotiabank", "banco azteca", "bancoppel", "inbursa", "banregio", "afirme", "caja popular", "casa de cambio", "divisas", "dolares"],
             osm: ["bank", "atm", "bureau_de_change", "bbva", "banamex", "santander", "banorte", "hsbc", "scotiabank", "azteca", "bancoppel", "inbursa", "banregio", "caja popular"],
@@ -489,7 +539,7 @@
             excluir: /hotel|motel|hostel|guest_house|restaurant|pizza|taco|pharmacy|hospital/i,
             precioMin: 0, precioMax: 45, unidadPrecio: "Comisión retiro / trámite"
         },
-        // 7. DESPACHOS, NOTARÍAS, SEGUROS, INMOBILIARIAS Y AGENCIAS DE VIAJES
+        // 9. DESPACHOS, NOTARÍAS, SEGUROS, INMOBILIARIAS Y AGENCIAS DE VIAJES
         {
             palabras: ["abogado", "abogados", "despacho juridico", "notaria", "notario", "contador", "contadores", "contabilidad", "seguros", "aseguradora", "gnp", "axa", "qualitas", "mapfre", "inmobiliaria", "bienes raices", "agencia de viajes"],
             osm: ["lawyer", "notary", "accountant", "insurance", "estate_agent", "travel_agency", "notaria", "abogado", "contador", "seguros", "inmobiliaria", "viajes"],
@@ -500,7 +550,7 @@
             validas: ["lawyer", "notar", "account", "contador", "segur", "insur", "estate", "inmobiliar", "travel", "viaje", "office"],
             precioMin: 350, precioMax: 2500, unidadPrecio: "Asesoría / trámite"
         },
-        // 8. HOTELES Y HOSPEDAJE
+        // 10. HOTELES Y HOSPEDAJE
         {
             palabras: ["hotel", "hoteles", "motel", "moteles", "hospedaje", "hostal", "cabana", "habitacion", "cuarto", "resort", "posada"],
             osm: ["hotel", "motel", "hostel", "guest_house", "resort", "holiday inn", "fiesta inn", "city express", "marriott", "ibis", "one", "posada"],
@@ -511,7 +561,7 @@
             excluir: /bank|atm|banco|hospital|pharmacy|supermarket/i,
             precioMin: 650, precioMax: 2600, unidadPrecio: "Por noche"
         },
-        // 9. ENTRETENIMIENTO, CINES, MUSEOS Y TURISMO
+        // 11. ENTRETENIMIENTO, CINES, MUSEOS Y TURISMO
         {
             palabras: ["museo", "museos", "galeria", "teatro", "cine", "cines", "cinepolis", "cinemex", "zoologico", "acuario", "casino", "mirador", "monumento", "plaza comercial", "centro comercial", "mall"],
             osm: ["museum", "gallery", "theatre", "cinema", "zoo", "aquarium", "theme_park", "casino", "attraction", "mall", "cinepolis", "cinemex", "museo", "teatro"],
@@ -523,7 +573,7 @@
             validas: ["museum", "museo", "gallery", "theatr", "teatro", "cinema", "cine", "zoo", "aquarium", "casino", "attraction", "mall", "plaza"],
             precioMin: 60, precioMax: 350, unidadPrecio: "Entrada / boleto"
         },
-        // 10. HELADOS, PALETAS, DULCES Y PANADERÍA
+        // 12. HELADOS, PALETAS, DULCES Y PANADERÍA
         {
             palabras: ["paleta", "paletas", "paleteria", "helado", "helados", "heladeria", "nieve", "nieves", "neveria", "michoacana", "raspado", "bolis"],
             osm: ["ice_cream", "paleteria", "neveria", "heladeria", "michoacana", "helados", "paletas", "nieves", "frozen_yogurt", "dairy queen", "nutrisa", "santa clara"],
@@ -554,7 +604,7 @@
             validas: ["bakery", "pastry", "panader", "pasteler", "reposter", "dona", "esperanza", "globo"],
             precioMin: 15, precioMax: 380, unidadPrecio: "Pan dulce a pastel"
         },
-        // 11. CARNICERÍA, POLLERÍA, PESCADERÍA, FRUTERÍA, SÚPER, VINATERÍA
+        // 13. CARNICERÍA, POLLERÍA, PESCADERÍA, FRUTERÍA, SÚPER, VINATERÍA
         {
             palabras: ["carne", "carnes", "carniceria", "bistec", "arrachera", "costilla", "chuleta", "chorizo", "res", "cerdo", "pollo", "polleria", "pescado", "pescaderia", "mariscos", "cremeria", "queso", "jamon"],
             osm: ["butcher", "seafood", "dairy", "deli", "carniceria", "polleria", "pescaderia", "mariscos", "cremeria", "sukarne", "bachoco"],
@@ -583,7 +633,7 @@
             validas: ["supermarket", "convenience", "grocery", "abarrotes", "oxxo", "walmart", "soriana", "chedraui", "aurrera", "asturiano", "alcohol", "modelorama", "purificadora", "water", "3b"],
             precioMin: 50, precioMax: 650, unidadPrecio: "Ticket promedio"
         },
-        // 12. RESTAURANTES Y COMIDA
+        // 14. RESTAURANTES Y COMIDA
         {
             palabras: ["hamburguesa", "hamburguesas", "burger", "burgers", "hot dog"],
             osm: ["burger", "hamburguesa", "burgers", "fast_food", "carls", "mcdonald", "burger king"],
@@ -622,7 +672,7 @@
             validas: ["cafe", "coffee", "restaurant", "fast_food", "sushi", "alita", "bar", "pub", "nightclub", "starbucks", "catering"],
             precioMin: 60, precioMax: 350, unidadPrecio: "Consumo por persona"
         },
-        // 13. ROPA, CALZADO, JOYERÍA Y ACCESORIOS
+        // 15. ROPA, CALZADO, JOYERÍA Y ACCESORIOS
         {
             palabras: ["camisa", "camisas", "playera", "playeras", "blusa", "pantalon", "jeans", "vestido", "saco", "traje", "ropa", "boutique", "moda", "sastreria", "sueter", "chamarra", "uniforme", "merceria", "telas"],
             osm: ["clothes", "fashion", "boutique", "department_store", "tailor", "fabric", "ropa", "suburbia", "liverpool", "coppel", "zara", "bershka", "pull", "c&a", "carey", "aldo conti", "mens fashion", "h&m"],
@@ -633,7 +683,7 @@
             precioMin: 220, precioMax: 890, unidadPrecio: "Por prenda"
         },
         {
-            palabras: ["tacon", "tacones", "zapato", "zapatos", "zapatilla", "calzado", "zapateria", "bota", "tenis", "sandalia", "joya", "joyas", "joyeria", "reloj", "relojeria", "bolsa", "bolsas", "maleta"],
+            palabras: ["tacon", "tacones", "zapato", "zapatos", "zapatilla", "calzado", "zapateria", "bota", "tenis", "sandalia", "joya", "joyas", "joyeria", "reloj", "relojeria", "bolsa", "bolsas", "maleta", "paraguas", "sombrilla"],
             osm: ["shoes", "jewelry", "watches", "bag", "zapateria", "calzado", "joyeria", "relojeria", "flexi", "andrea", "price shoes", "bhermanos", "nike", "adidas", "bizarro"],
             shopOSM: "shoes|jewelry|watches|bag|leather|fashion_accessories",
             photon: ["zapateria", "joyeria", "relojeria"],
@@ -641,7 +691,7 @@
             validas: ["shoe", "zapater", "calzad", "jewel", "joyer", "watch", "relojer", "bag", "bolsa", "flexi", "andrea", "nike", "adidas"],
             precioMin: 390, precioMax: 1650, unidadPrecio: "Por artículo"
         },
-        // 14. SALUD, FARMACIAS, HOSPITALES, VETERINARIAS Y ÓPTICAS
+        // 16. SALUD, FARMACIAS, HOSPITALES, VETERINARIAS Y ÓPTICAS
         {
             palabras: ["farmacia", "farmacias", "medicina", "medicamento", "pastilla", "botica"],
             osm: ["pharmacy", "chemist", "farmacia", "guadalajara", "benavides", "similares", "ahorro", "san pablo"],
@@ -663,9 +713,9 @@
             validas: ["dentist", "hospital", "clinic", "doctor", "medic", "veterinar", "optica", "laborator", "chopo", "salud digna", "healthcare", "pet"],
             precioMin: 300, precioMax: 1200, unidadPrecio: "Consulta / estudio"
         },
-        // 15. PAPELERÍA, LIBROS, CÓMPUTO Y FOTOGRAFÍA
+        // 17. PAPELERÍA, LIBROS, CÓMPUTO Y FOTOGRAFÍA
         {
-            palabras: ["computadora", "laptop", "impresora", "electronica", "papeleria", "copias", "libro", "libros", "libreria", "fotografia", "estudio fotografico", "musica", "instrumentos"],
+            palabras: ["computadora", "laptop", "impresora", "electronica", "papeleria", "copias", "cuaderno", "cuadernos", "pluma", "plumas", "lapiz", "mochila", "libro", "libros", "libreria", "fotografia", "musica", "instrumentos"],
             osm: ["electronics", "computer", "stationery", "copyshop", "books", "photo", "musical_instrument", "papeleria", "libreria", "office depot", "gandhi", "steren"],
             shopOSM: "electronics|computer|stationery|copyshop|books|photo|hifi|musical_instrument",
             photon: ["papeleria", "libreria", "electronica", "computadoras"],
@@ -673,7 +723,7 @@
             validas: ["electronic", "computer", "stationery", "copyshop", "papeler", "book", "librer", "steren", "photo", "office depot", "music"],
             precioMin: 50, precioMax: 2500, unidadPrecio: "Por artículo"
         },
-        // 16. AUTOMOTRIZ, TRANSPORTE, GASOLINERAS Y AEROPUERTOS
+        // 18. AUTOMOTRIZ, TRANSPORTE, GASOLINERAS Y AEROPUERTOS
         {
             palabras: ["taller", "talleres", "mecanico", "llanta", "llantas", "llantera", "refaccion", "refacciones", "refaccionaria", "bujia", "bujias", "bateria", "aceite", "gasolina", "gasolinera", "autolavado", "agencia de autos", "motos", "estacionamiento", "central de autobuses", "aeropuerto", "metro", "tren"],
             osm: ["car_repair", "tyres", "car_parts", "car", "motorcycle", "fuel", "charging_station", "car_wash", "parking", "bus_station", "aerodrome", "station", "taller", "llantera", "refaccionaria", "autozone", "pemex", "autolavado"],
@@ -686,7 +736,7 @@
             validas: ["car_repair", "tyre", "car_part", "car", "motorcycle", "fuel", "car_wash", "taller", "llanter", "refaccion", "autozone", "pemex", "vehicle", "parking", "bus", "aero", "station"],
             precioMin: 250, precioMax: 1900, unidadPrecio: "Servicio / refacción"
         },
-        // 17. SERVICIOS PERSONALES, DEPORTE, EDUCACIÓN, GOBIERNO Y COMUNIDAD
+        // 19. SERVICIOS PERSONALES, DEPORTE, EDUCACIÓN, GOBIERNO Y COMUNIDAD
         {
             palabras: ["lavanderia", "tintoreria", "estetica", "barberia", "peluqueria", "spa", "gimnasio", "gym", "cancha", "alberca", "flor", "flores", "floreria", "vivero", "juguete", "juguetes", "bicicleta", "paqueteria", "correo", "funeraria", "escuela", "escuelas", "colegio", "universidad", "guarderia", "biblioteca", "parque", "iglesia", "templo", "gobierno", "policia", "bomberos"],
             osm: ["laundry", "dry_cleaning", "hairdresser", "beauty", "barber", "fitness_centre", "sports_centre", "florist", "garden_centre", "toys", "bicycle", "post_office", "funeral_directors", "school", "college", "university", "kindergarten", "library", "park", "place_of_worship", "townhall", "police", "fire_station"],
@@ -719,9 +769,9 @@
         let filtroManMadeOSM = "";
         let excluirGirosRegex = /apartment|residential|house|grave_yard|cemetery/i;
         let palabrasClaveValidadas = new Set();
-        let precioMin = 90;
-        let precioMax = 350;
-        let unidadPrecio = "Estimado por servicio / producto";
+        let precioMin = 60;
+        let precioMax = 450;
+        let unidadPrecio = "Estimado por producto / servicio";
         let esMarcaExacta = false;
 
         palabras.forEach(p => {
@@ -763,14 +813,20 @@
             }
         });
 
-        // Si el usuario escribe cualquier giro o producto nuevo del mundo que no esté en la lista, se busca abiertamente en todos los tags reales
+        // Si el usuario escribe CUALQUIER producto nuevo del mundo que no esté en la lista,
+        // buscamos tiendas especializadas con ese nombre Y comercios multipropósito donde se venden productos generales
         if (!huboCoincidencia) {
-            esMarcaExacta = true;
             palabrasClaveValidadas.forEach(raiz => setOSM.add(raiz));
-            filtroShopOSM = ".*";
-            filtroAmenityOSM = ".*";
-            filtroCraftOSM = ".*";
-            filtroOfficeOSM = ".*";
+            ["supermarket", "department_store", "variety_store", "convenience", "mall", "marketplace", "walmart", "soriana", "chedraui", "liverpool", "coppel", "sanborns", "miniso", "3b"].forEach(t => {
+                setOSM.add(t);
+                palabrasClaveValidadas.add(t);
+            });
+            filtroShopOSM = "supermarket|department_store|variety_store|convenience|mall|general";
+            filtroAmenityOSM = "marketplace";
+            categoriaGeoapify = "commercial.supermarket,commercial.department_store,commercial.shopping_mall,commercial.convenience,commercial.marketplace";
+            terminosPhoton.add("supermercado");
+            terminosPhoton.add("tienda departamental");
+            terminosPhoton.add("mercado");
         }
 
         return {
@@ -856,28 +912,16 @@
             nwr["operator"~"${intencion.regexOSM}",i](around:${radioMetros},${lat},${lon});
             nwr["description"~"${intencion.regexOSM}",i](around:${radioMetros},${lat},${lon});
         `;
-        if (intencion.huboCoincidencia) {
-            if (intencion.filtroShopOSM) bloques += `nwr["shop"~"${intencion.filtroShopOSM}",i](around:${radioMetros},${lat},${lon});`;
-            if (intencion.filtroAmenityOSM) bloques += `nwr["amenity"~"${intencion.filtroAmenityOSM}",i](around:${radioMetros},${lat},${lon});`;
-            if (intencion.filtroCraftOSM) bloques += `nwr["craft"~"${intencion.filtroCraftOSM}",i](around:${radioMetros},${lat},${lon});`;
-            if (intencion.filtroOfficeOSM) bloques += `nwr["office"~"${intencion.filtroOfficeOSM}",i](around:${radioMetros},${lat},${lon});`;
-            if (intencion.filtroHealthcareOSM) bloques += `nwr["healthcare"~"${intencion.filtroHealthcareOSM}",i](around:${radioMetros},${lat},${lon});`;
-            if (intencion.filtroLeisureOSM) bloques += `nwr["leisure"~"${intencion.filtroLeisureOSM}",i](around:${radioMetros},${lat},${lon});`;
-            if (intencion.filtroTourismOSM) bloques += `nwr["tourism"~"${intencion.filtroTourismOSM}",i](around:${radioMetros},${lat},${lon});`;
-            if (intencion.filtroAerowayOSM) bloques += `nwr["aeroway"~"${intencion.filtroAerowayOSM}",i](around:${radioMetros},${lat},${lon});`;
-            if (intencion.filtroRailwayOSM) bloques += `nwr["railway"~"${intencion.filtroRailwayOSM}",i](around:${radioMetros},${lat},${lon});`;
-            if (intencion.filtroManMadeOSM) bloques += `nwr["man_made"~"${intencion.filtroManMadeOSM}",i](around:${radioMetros},${lat},${lon});`;
-        } else {
-            bloques += `
-                nwr["shop"~"${intencion.regexOSM}",i](around:${radioMetros},${lat},${lon});
-                nwr["amenity"~"${intencion.regexOSM}",i](around:${radioMetros},${lat},${lon});
-                nwr["craft"~"${intencion.regexOSM}",i](around:${radioMetros},${lat},${lon});
-                nwr["office"~"${intencion.regexOSM}",i](around:${radioMetros},${lat},${lon});
-                nwr["healthcare"~"${intencion.regexOSM}",i](around:${radioMetros},${lat},${lon});
-                nwr["leisure"~"${intencion.regexOSM}",i](around:${radioMetros},${lat},${lon});
-                nwr["tourism"~"${intencion.regexOSM}",i](around:${radioMetros},${lat},${lon});
-            `;
-        }
+        if (intencion.filtroShopOSM) bloques += `nwr["shop"~"${intencion.filtroShopOSM}",i](around:${radioMetros},${lat},${lon});`;
+        if (intencion.filtroAmenityOSM) bloques += `nwr["amenity"~"${intencion.filtroAmenityOSM}",i](around:${radioMetros},${lat},${lon});`;
+        if (intencion.filtroCraftOSM) bloques += `nwr["craft"~"${intencion.filtroCraftOSM}",i](around:${radioMetros},${lat},${lon});`;
+        if (intencion.filtroOfficeOSM) bloques += `nwr["office"~"${intencion.filtroOfficeOSM}",i](around:${radioMetros},${lat},${lon});`;
+        if (intencion.filtroHealthcareOSM) bloques += `nwr["healthcare"~"${intencion.filtroHealthcareOSM}",i](around:${radioMetros},${lat},${lon});`;
+        if (intencion.filtroLeisureOSM) bloques += `nwr["leisure"~"${intencion.filtroLeisureOSM}",i](around:${radioMetros},${lat},${lon});`;
+        if (intencion.filtroTourismOSM) bloques += `nwr["tourism"~"${intencion.filtroTourismOSM}",i](around:${radioMetros},${lat},${lon});`;
+        if (intencion.filtroAerowayOSM) bloques += `nwr["aeroway"~"${intencion.filtroAerowayOSM}",i](around:${radioMetros},${lat},${lon});`;
+        if (intencion.filtroRailwayOSM) bloques += `nwr["railway"~"${intencion.filtroRailwayOSM}",i](around:${radioMetros},${lat},${lon});`;
+        if (intencion.filtroManMadeOSM) bloques += `nwr["man_made"~"${intencion.filtroManMadeOSM}",i](around:${radioMetros},${lat},${lon});`;
 
         const consulta = `[out:json][timeout:10];(${bloques});out center ${limite};`;
         const servidores = [
@@ -1018,7 +1062,7 @@
                 }).catch(() => {})
             : Promise.resolve();
 
-        const pGeoapifyText = Promise.allSettled(intencion.listaPhoton.slice(0, 3).map(termino =>
+        const pGeoapifyText = Promise.allSettled(intencion.listaPhoton.slice(0, 4).map(termino =>
             fetchRapido(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(termino)}&type=amenity&filter=circle:${centroBusquedaLon},${centroBusquedaLat},35000&bias=proximity:${centroBusquedaLon},${centroBusquedaLat}&limit=40&apiKey=${GEOAPIFY_API_KEY}`, {}, 5500)
                 .then(r => r.json())
                 .then(data => {
@@ -1074,7 +1118,7 @@
 
         const delta = 0.36;
         const viewbox = `${centroBusquedaLon - delta},${centroBusquedaLat + delta},${centroBusquedaLon + delta},${centroBusquedaLat - delta}`;
-        const pNominatimCerca = Promise.allSettled(intencion.listaPhoton.slice(0, 3).map(termino =>
+        const pNominatimCerca = Promise.allSettled(intencion.listaPhoton.slice(0, 4).map(termino =>
             fetchRapido(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(termino)}&viewbox=${viewbox}&bounded=1&limit=35&addressdetails=1`, {}, 5000)
                 .then(r => r.json())
                 .then(data => {
@@ -1154,6 +1198,7 @@
 
         const loader = document.getElementById("loader");
         const timerSpan = document.getElementById("timerSec");
+        document.getElementById("loadingQuery").innerText = query;
         const container = document.getElementById("results");
 
         loader.style.display = "block";
@@ -1175,8 +1220,8 @@
         if (tiendas.length === 0) {
             container.innerHTML = `
                 <div class="card">
-                    <div style="font-weight:700; margin-bottom:6px;">No aparecieron locales registrados para "${query}" en tu zona</div>
-                    <div class="meta">Prueba escribiendo el giro o nombre del comercio, o mueve el mapa y toca "🌍 Buscar en esta zona".</div>
+                    <div style="font-weight:700; margin-bottom:6px;">No aparecieron locales en este zoom para "${query}"</div>
+                    <div class="meta">Aleja un poco el mapa o toca "🌍 Buscar en esta zona".</div>
                 </div>`;
             return;
         }
@@ -1187,7 +1232,7 @@
         container.innerHTML += `
             <div class="summary-dashboard">
                 <div class="summary-box">
-                    <small>1° 📍 Local más cercano a ti</small>
+                    <small>1° 📍 Local más cercano donde venden "${query}"</small>
                     <strong>${masCercano.nombre}</strong>
                     <span>${formatearDistancia(masCercano.distancia)} ${masCercano.minutosAuto ? `(${masCercano.minutosAuto} min coche)` : ""} • ${masCercano.rangoTexto}</span>
                 </div>
@@ -1203,7 +1248,7 @@
                 </div>
             </div>
             <div class="section-divider">
-                <span>🏪 ${tiendas.length} LOCALES REALES PARA "${query.toUpperCase()}" — 1° CERCANÍA REAL • 2° RANGO DE PRECIO • 3° RESEÑAS REALES</span>
+                <span>🏪 ${tiendas.length} LOCALES REALES DONDE VENDEN "${query.toUpperCase()}" — 1° CERCANÍA REAL • 2° RANGO DE PRECIO • 3° RESEÑAS REALES</span>
             </div>
         `;
 
@@ -1228,7 +1273,7 @@
                 .addTo(capaTiendas)
                 .bindPopup(`
                     <b>#${rank} ${op.nombre}</b><br>
-                    🛍️ Producto/Servicio: <b>${query}</b><br>
+                    🛍️ Producto buscado: <b>${query}</b><br>
                     💰 Rango: <b>${op.rangoTexto}</b><br>
                     🛣️ <b>${distTexto}</b> (${tiempoTxt})<br>
                     📌 ${op.calle}, C.P. ${op.codigoPostal}, ${op.ciudad}, ${op.estado}, ${op.pais}
@@ -1257,7 +1302,7 @@
                     <span class="price-tag">💰 ${op.rangoTexto} <small style="font-weight:500; font-size:11px;">(${intencion.unidadPrecio})</small></span>
                 </div>
                 <div class="rating-box">
-                    <span>⭐ <b>Reseñas reales verificables</b> (sin calificaciones simuladas):</span>
+                    <span>⭐ <b>Reseñas reales verificables:</b></span>
                     <div class="rating-links">
                         <a href="${urlResenasNegocio}" target="_blank" class="mini-review-link">🏪 Reseñas reales del negocio</a>
                         <a href="${urlResenasProducto}" target="_blank" class="mini-review-link">🛍️ Reseñas reales de "${query}"</a>
